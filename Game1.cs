@@ -25,6 +25,7 @@ namespace PKPhysicsTestProject
         private List<PKBody<Box>> bodyListBox;
         private List<Color> cricleColors;
         private List<Color> boxColors;
+        private List<Color> boxColorsOutLine;
 
         private Vector2[] verticsBuffer;
 
@@ -68,6 +69,7 @@ namespace PKPhysicsTestProject
             this.bodyListBox = new List<PKBody<Box>>();
             this.cricleColors = new List<Color>();
             this.boxColors = new List<Color>();
+            this.boxColorsOutLine = new List<Color>();
 
             for (int i = 0; i < bodyCount; ++i)
             {
@@ -86,6 +88,7 @@ namespace PKPhysicsTestProject
                     PKBodyUtil.CreateBoxBody(2f, 2f, new PKVector(x, y), 2f, false, .5f, out PKBody<Box> body, out string message);
                     bodyListBox.Add(body);
                     this.boxColors.Add(RandomHelper.RandomColor());
+                    this.boxColorsOutLine.Add(Color.White);
                 }
             }
         }
@@ -134,12 +137,14 @@ namespace PKPhysicsTestProject
                     PKVector dir = PKMath.Normalize(new PKVector(dx, dy));
                     PKVector velocity = dir * speed * (float)gameTime.ElapsedGameTime.TotalSeconds;
                     this.bodyListCricle[0].Move(velocity);
+                    this.bodyListBox[0].Move(velocity);
                 }
             }
 
             for (int i = 0; i < bodyListBox.Count; i++)
             {
                 this.bodyListBox[i].Rotate((float)Math.PI / 2f * (float)gameTime.ElapsedGameTime.TotalSeconds);
+                this.boxColorsOutLine[i] = Color.White;
             }
 
             for (int i = 0; i < bodyListCricle.Count - 1; i++)
@@ -153,6 +158,20 @@ namespace PKPhysicsTestProject
 
                         bodyA.Move(-nor * depth * 0.5f);
                         bodyB.Move(nor * depth * 0.5f);
+                    }
+                }
+            }
+
+            for (int i = 0; i < bodyListBox.Count - 1; i++)
+            {
+                var bodyA = bodyListBox[i];
+                for (int j = i + 1; j < bodyListBox.Count; j++)
+                {
+                    var bodyB = bodyListBox[j];
+                    if (PKCollisions.IntersectPolygons(bodyA.GetTransformedVertics(),bodyB.GetTransformedVertics()))
+                    {
+                        this.boxColorsOutLine[i] = Color.Red;
+                        this.boxColorsOutLine[j] = Color.Red;
                     }
                 }
             }
@@ -178,7 +197,7 @@ namespace PKPhysicsTestProject
                 PKBody<Box> body = bodyListBox[i];
                 PKConverter.ToVector2Array(body.GetTransformedVertics(), ref verticsBuffer);
                 shapes.DrawPolygonFill(this.verticsBuffer, body.shape.Tiangles, this.boxColors[i]);
-                shapes.DrawPolygon(this.verticsBuffer, Color.White);
+                shapes.DrawPolygon(this.verticsBuffer, boxColorsOutLine[i]);
             }
             this.shapes.End();
             this.screen.Unset();
