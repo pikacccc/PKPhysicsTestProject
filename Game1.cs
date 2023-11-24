@@ -8,6 +8,7 @@ using PKPhysics;
 using PKPhysics.PKShape;
 using System;
 using System.Collections.Generic;
+using Color = Microsoft.Xna.Framework.Color;
 
 namespace PKPhysicsTestProject
 {
@@ -20,8 +21,12 @@ namespace PKPhysicsTestProject
         private Shapes shapes;
         private Camera camera;
 
-        private List<PKBody<Cricle>> bodyList;
-        private Color[] colors;
+        private List<PKBody<Cricle>> bodyListCricle;
+        private List<PKBody<Box>> bodyListBox;
+        private List<Color> cricleColors;
+        private List<Color> boxColors;
+
+        private Vector2[] verticsBuffer;
 
         public Game1()
         {
@@ -50,24 +55,40 @@ namespace PKPhysicsTestProject
             this.shapes = new Shapes(this);
             this.camera.Zoom = 24;
 
+            this.CreateBodys();
+        }
+
+        private void CreateBodys()
+        {
             this.camera.GetExtents(out float left, out float right, out float botton, out float top);
 
             int bodyCount = 10;
             float padding = MathF.Abs(right - left) * 0.05f;
-            this.bodyList = new List<PKBody<Cricle>>();
-            this.colors = new Color[bodyCount];
+            this.bodyListCricle = new List<PKBody<Cricle>>();
+            this.bodyListBox = new List<PKBody<Box>>();
+            this.cricleColors = new List<Color>();
+            this.boxColors = new List<Color>();
 
             for (int i = 0; i < bodyCount; ++i)
             {
                 float x = RandomHelper.RandomSingle(left + padding, right - padding);
                 float y = RandomHelper.RandomSingle(botton + padding, top - padding);
+                int type = RandomHelper.RandomInteger(1, 3);
 
-                PKBodyUtil.CreateCircleBody(1f, new PKVector(x, y), 2f, false, .5f, out PKBody<Cricle> body, out string message);
-                bodyList.Add(body);
-                this.colors[i] = RandomHelper.RandomColor();
+                if (type == (int)ShapeType.Circle)
+                {
+                    PKBodyUtil.CreateCircleBody(1f, new PKVector(x, y), 2f, false, .5f, out PKBody<Cricle> body, out string message);
+                    bodyListCricle.Add(body);
+                    this.cricleColors.Add(RandomHelper.RandomColor());
+                }
+                else if (type == (int)ShapeType.Box)
+                {
+                    PKBodyUtil.CreateBoxBody(2f, 2f, new PKVector(x, y), 2f, false, .5f, out PKBody<Box> body, out string message);
+                    bodyListBox.Add(body);
+                    this.boxColors.Add(RandomHelper.RandomColor());
+                }
             }
         }
-
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
@@ -108,20 +129,25 @@ namespace PKPhysicsTestProject
                 if (keyboard.IsKeyDown(Keys.Right)) { dx++; }
                 if (keyboard.IsKeyDown(Keys.Left)) { dx--; }
 
-                if (dx!=0||dy!=0)
+                if (dx != 0 || dy != 0)
                 {
                     PKVector dir = PKMath.Normalize(new PKVector(dx, dy));
                     PKVector velocity = dir * speed * (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    this.bodyList[0].Move(velocity);
+                    this.bodyListCricle[0].Move(velocity);
                 }
             }
 
-            for (int i = 0; i < bodyList.Count - 1; i++)
+            for (int i = 0; i < bodyListBox.Count; i++)
             {
-                var bodyA = bodyList[i];
-                for (int j = i + 1; j < bodyList.Count; j++)
+                this.bodyListBox[i].Rotate((float)Math.PI / 2f * (float)gameTime.ElapsedGameTime.TotalSeconds);
+            }
+
+            for (int i = 0; i < bodyListCricle.Count - 1; i++)
+            {
+                var bodyA = bodyListCricle[i];
+                for (int j = i + 1; j < bodyListCricle.Count; j++)
                 {
-                    var bodyB = bodyList[j];
+                    var bodyB = bodyListCricle[j];
                     if (PKCollisions.IntersectCricles(bodyA.Position, bodyB.Position, bodyA.shape.Radius, bodyB.shape.Radius, out PKVector nor, out float depth))
                     {
 
@@ -139,12 +165,20 @@ namespace PKPhysicsTestProject
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             this.shapes.Begin(this.camera);
-            for (int i = 0; i < bodyList.Count; i++)
+            for (int i = 0; i < bodyListCricle.Count; i++)
             {
-                PKBody<Cricle> body = bodyList[i];
+                PKBody<Cricle> body = bodyListCricle[i];
                 Vector2 pos = PKConverter.ToVector2(body.Position);
-                shapes.DrawCircleFill(pos, body.shape.Radius, 360, colors[i]);
+                shapes.DrawCircleFill(pos, body.shape.Radius, 360, this.cricleColors[i]);
                 shapes.DrawCircle(pos, body.shape.Radius, 360, Color.White);
+            }
+
+            for (int i = 0; i < bodyListBox.Count; i++)
+            {
+                PKBody<Box> body = bodyListBox[i];
+                PKConverter.ToVector2Array(body.GetTransformedVertics(), ref verticsBuffer);
+                shapes.DrawPolygonFill(this.verticsBuffer, body.shape.Tiangles, this.boxColors[i]);
+                shapes.DrawPolygon(this.verticsBuffer, Color.White);
             }
             this.shapes.End();
             this.screen.Unset();
