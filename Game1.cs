@@ -137,13 +137,13 @@ namespace PKPhysicsTestProject
                     PKVector dir = PKMath.Normalize(new PKVector(dx, dy));
                     PKVector velocity = dir * speed * (float)gameTime.ElapsedGameTime.TotalSeconds;
                     this.bodyListCricle[0].Move(velocity);
-                    this.bodyListBox[0].Move(velocity);
+                    //this.bodyListBox[0].Move(velocity);
                 }
             }
 
             for (int i = 0; i < bodyListBox.Count; i++)
             {
-                this.bodyListBox[i].Rotate((float)Math.PI / 2f * (float)gameTime.ElapsedGameTime.TotalSeconds);
+                //this.bodyListBox[i].Rotate((float)Math.PI / 2f * (float)gameTime.ElapsedGameTime.TotalSeconds);
                 this.boxColorsOutLine[i] = Color.White;
             }
 
@@ -174,6 +174,20 @@ namespace PKPhysicsTestProject
                         this.boxColorsOutLine[j] = Color.Red;
                         bodyA.Move(-nor * depth * 0.5f);
                         bodyB.Move(nor * depth * 0.5f);
+                    }
+                }
+            }
+
+            for (int i = 0; i < bodyListBox.Count - 1; i++)
+            {
+                var bodyA = bodyListBox[i];
+                for (int j = 0; j < bodyListCricle.Count; j++)
+                {
+                    var bodyB = bodyListCricle[j];
+                    if (PKCollisions.IntersectPolygonsAndCricle(bodyA.GetTransformedVertics(), bodyB.Position, bodyB.shape.Radius, out PKVector nor, out float depth))
+                    {
+                        bodyA.Move(nor * depth * 0.5f);
+                        bodyB.Move(-nor * depth * 0.5f);
                     }
                 }
             }
