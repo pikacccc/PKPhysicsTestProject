@@ -168,10 +168,12 @@ namespace PKPhysicsTestProject
                 for (int j = i + 1; j < bodyListBox.Count; j++)
                 {
                     var bodyB = bodyListBox[j];
-                    if (PKCollisions.IntersectPolygons(bodyA.GetTransformedVertics(),bodyB.GetTransformedVertics()))
+                    if (PKCollisions.IntersectPolygons(bodyA.GetTransformedVertics(), bodyB.GetTransformedVertics(), out PKVector nor, out float depth))
                     {
                         this.boxColorsOutLine[i] = Color.Red;
                         this.boxColorsOutLine[j] = Color.Red;
+                        bodyA.Move(-nor * depth * 0.5f);
+                        bodyB.Move(nor * depth * 0.5f);
                     }
                 }
             }
