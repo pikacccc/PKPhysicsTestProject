@@ -62,7 +62,7 @@ namespace PKPhysicsTestProject
         {
             this.camera.GetExtents(out float left, out float right, out float botton, out float top);
 
-            int bodyCount = 10;
+            int bodyCount = 30;
             float padding = MathF.Abs(right - left) * 0.05f;
             this.cricleColors = new Color[bodyCount];
             this.boxColors = new Color[bodyCount];
@@ -120,7 +120,7 @@ namespace PKPhysicsTestProject
 
                 float dx = 0;
                 float dy = 0;
-                float forceSize = 24;
+                float forceSize = 48;
                 if (keyboard.IsKeyDown(Keys.Up)) { dy++; }
                 if (keyboard.IsKeyDown(Keys.Down)) { dy--; }
                 if (keyboard.IsKeyDown(Keys.Right)) { dx++; }
@@ -145,6 +145,8 @@ namespace PKPhysicsTestProject
             }
 
             PKWorld.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+
+            WrapScreen();
             base.Update(gameTime);
         }
 
@@ -175,6 +177,27 @@ namespace PKPhysicsTestProject
             this.screen.Unset();
             this.screen.Present(this.sprites);
             base.Draw(gameTime);
+        }
+
+        private void WrapScreen()
+        {
+            this.camera.GetExtents(out Vector2 camMin, out Vector2 camMax);
+
+            camMin *= 1.1f;
+            camMax *= 1.1f;
+            float viewW = camMax.X - camMin.X;
+            float viewH = camMax.Y - camMin.Y;
+            for (int i = 0; i < PKWorld.BodyCount(); ++i)
+            {
+                if (!PKWorld.GetBody(i, out var body))
+                {
+                    throw new Exception();
+                }
+                if (body.Position.X < camMin.X) body.MoveTo(new PKVector(body.Position.X + viewW, body.Position.Y));
+                if (body.Position.X > camMax.X) body.MoveTo(new PKVector(body.Position.X - viewW, body.Position.Y));
+                if (body.Position.Y < camMin.Y) body.MoveTo(new PKVector(body.Position.X, body.Position.Y + viewH));
+                if (body.Position.Y > camMax.Y) body.MoveTo(new PKVector(body.Position.X, body.Position.Y - viewH));
+            }
         }
     }
 }
