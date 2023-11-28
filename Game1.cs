@@ -81,9 +81,13 @@ namespace PKPhysicsTestProject
                 }
                 else if (type == (int)ShapeType.Box)
                 {
-                    PKBodyUtil.CreateBoxBody(2f, 2f, new PKVector(x, y), 2f, false, .5f, out body, out string message);
+                    PKBodyUtil.CreateBoxBody(1.77f, 1.77f, new PKVector(x, y), 2f, false, .5f, out body, out string message);
                     this.boxColors[i] = RandomHelper.RandomColor();
                     this.boxColorsOutLine[i] = Color.White;
+                }
+                if (i != 0)
+                {
+                    body.IsStatic = RandomHelper.RandomBooleon();
                 }
                 PKWorld.AddBody(body);
             }
