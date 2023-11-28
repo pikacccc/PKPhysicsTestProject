@@ -120,7 +120,7 @@ namespace PKPhysicsTestProject
 
                 float dx = 0;
                 float dy = 0;
-                float speed = 8;
+                float forceSize = 24;
                 if (keyboard.IsKeyDown(Keys.Up)) { dy++; }
                 if (keyboard.IsKeyDown(Keys.Down)) { dy--; }
                 if (keyboard.IsKeyDown(Keys.Right)) { dx++; }
@@ -133,14 +133,14 @@ namespace PKPhysicsTestProject
 
                 if (dx != 0 || dy != 0)
                 {
-                    PKVector dir = new PKVector(dx, dy).Normalized();
-                    PKVector velocity = dir * (float)gameTime.ElapsedGameTime.TotalSeconds * speed;
-                    body.Move(velocity);
+                    PKVector forceDir = new PKVector(dx, dy).Normalized();
+                    PKVector force = forceDir * forceSize;
+                    body.AddForce(force);
                 }
 
                 if (keyboard.IsKeyDown(Keys.R))
                 {
-                    body.Rotate((float)Math.PI / 2f * (float)gameTime.ElapsedGameTime.TotalSeconds * speed);
+                    body.Rotate((float)Math.PI / 2f * (float)gameTime.ElapsedGameTime.TotalSeconds * forceSize);
                 }
             }
 
