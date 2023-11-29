@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Input;
 using PKPhysics;
 using PKPhysics.PKShape;
 using System;
+using System.Collections.Generic;
 using Color = Microsoft.Xna.Framework.Color;
 using Screen = Flat.Graphics.Screen;
 
@@ -22,9 +23,8 @@ namespace PKPhysicsTestProject
         private Camera camera;
 
         public PKWorld PKWorld;
-        private Color[] cricleColors;
-        private Color[] boxColors;
-        private Color[] boxColorsOutLine;
+        private List<Color> Colors;
+        private List<Color> OutLineColors;
 
         private Vector2[] verticsBuffer;
 
@@ -55,42 +55,47 @@ namespace PKPhysicsTestProject
             this.shapes = new Shapes(this);
             this.camera.Zoom = 24;
 
-            this.CreateBodys();
+            this.CreateWorld();
         }
 
-        private void CreateBodys()
+        private void CreateWorld()
         {
             this.camera.GetExtents(out float left, out float right, out float botton, out float top);
 
             int bodyCount = 30;
-            float padding = MathF.Abs(right - left) * 0.05f;
-            this.cricleColors = new Color[bodyCount];
-            this.boxColors = new Color[bodyCount];
-            this.boxColorsOutLine = new Color[bodyCount];
+            float padding = MathF.Abs(right - left) * 0.1f;
+            this.Colors = new List<Color>();
+            this.OutLineColors = new List<Color>();
 
-            for (int i = 0; i < bodyCount; ++i)
+            if (!PKBodyUtil.CreateBoxBody(right - left - padding * 2, 3f, new PKVector(0, -10), 1f, true, 0.5f, out PKBody ground, out string error))
             {
-                float x = RandomHelper.RandomSingle(left + padding, right - padding);
-                float y = RandomHelper.RandomSingle(botton + padding, top - padding);
-                int type = RandomHelper.RandomInteger(1, 3);
-                PKBody body = null;
-                if (type == (int)ShapeType.Circle)
-                {
-                    PKBodyUtil.CreateCircleBody(1f, new PKVector(x, y), 2f, false, .5f, out body, out string message);
-                    this.cricleColors[i] = RandomHelper.RandomColor();
-                }
-                else if (type == (int)ShapeType.Box)
-                {
-                    PKBodyUtil.CreateBoxBody(1.77f, 1.77f, new PKVector(x, y), 2f, false, .5f, out body, out string message);
-                    this.boxColors[i] = RandomHelper.RandomColor();
-                    this.boxColorsOutLine[i] = Color.White;
-                }
-                if (i != 0)
-                {
-                    body.IsStatic = RandomHelper.RandomBooleon();
-                }
-                PKWorld.AddBody(body);
+                throw new Exception(error);
             }
+            PKWorld.AddBody(ground);
+            this.Colors.Add(Color.Green);
+            this.OutLineColors.Add(Color.White);
+            //for (int i = 0; i < bodyCount; ++i)
+            //{
+            //    float x = RandomHelper.RandomSingle(left + padding, right - padding);
+            //    float y = RandomHelper.RandomSingle(botton + padding, top - padding);
+            //    int type = RandomHelper.RandomInteger(1, 3);
+            //    PKBody body = null;
+            //    if (type == (int)ShapeType.Circle)
+            //    {
+            //        PKBodyUtil.CreateCircleBody(1f, new PKVector(x, y), 2f, false, .5f, out body, out string message);
+            //    }
+            //    else if (type == (int)ShapeType.Box)
+            //    {
+            //        PKBodyUtil.CreateBoxBody(1.77f, 1.77f, new PKVector(x, y), 2f, false, .5f, out body, out string message);
+            //    }
+            //    if (i != 0)
+            //    {
+            //        body.IsStatic = RandomHelper.RandomBooleon();
+            //    }
+            //    PKWorld.AddBody(body);
+            //    this.Colors.Add(RandomHelper.RandomColor());
+            //    this.OutLineColors.Add(Color.White);
+            //}
         }
         protected override void LoadContent()
         {
@@ -104,6 +109,37 @@ namespace PKPhysicsTestProject
 
             keyboard.Update();
             mouse.Update();
+
+            if (mouse.IsLeftMouseButtonPressed())
+            {
+                float w = RandomHelper.RandomSingle(1f, 2f);
+                float h = RandomHelper.RandomSingle(1f, 2f);
+
+                PKVector worldMousePos = PKConverter.ToPKVector2(mouse.GetMouseWorldPosition(this, screen, camera));
+
+                if (!PKBodyUtil.CreateBoxBody(w, h, worldMousePos, 1, false, .6f, out PKBody body, out string error))
+                {
+                    throw new Exception(error);
+                }
+
+                PKWorld.AddBody(body);
+                this.Colors.Add(RandomHelper.RandomColor());
+                this.OutLineColors.Add(Color.White);
+            }
+
+            if (mouse.IsRightMouseButtonPressed())
+            {
+                PKVector worldMousePos = PKConverter.ToPKVector2(mouse.GetMouseWorldPosition(this, screen, camera));
+                float r = RandomHelper.RandomSingle(1f, 2f);
+                if (!PKBodyUtil.CreateCircleBody(r, worldMousePos, 1, false, .6f, out PKBody body, out string error))
+                {
+                    throw new Exception(error);
+                }
+
+                PKWorld.AddBody(body);
+                this.Colors.Add(RandomHelper.RandomColor());
+                this.OutLineColors.Add(Color.White);
+            }
 
             if (keyboard.IsKeyAvailable)
             {
@@ -122,35 +158,40 @@ namespace PKPhysicsTestProject
                     this.camera.DecZoom();
                 }
 
-                float dx = 0;
-                float dy = 0;
-                float forceSize = 48;
-                if (keyboard.IsKeyDown(Keys.Up)) { dy++; }
-                if (keyboard.IsKeyDown(Keys.Down)) { dy--; }
-                if (keyboard.IsKeyDown(Keys.Right)) { dx++; }
-                if (keyboard.IsKeyDown(Keys.Left)) { dx--; }
-
-                if (!this.PKWorld.GetBody(0, out PKBody body))
+                if (keyboard.IsKeyClicked(Keys.X))
                 {
-                    throw new Exception("无法找到body");
+                    Console.WriteLine($"场景中body个数{this.PKWorld.BodyCount()}");
                 }
+                //float dx = 0;
+                //float dy = 0;
+                //float forceSize = 48;
+                //if (keyboard.IsKeyDown(Keys.Up)) { dy++; }
+                //if (keyboard.IsKeyDown(Keys.Down)) { dy--; }
+                //if (keyboard.IsKeyDown(Keys.Right)) { dx++; }
+                //if (keyboard.IsKeyDown(Keys.Left)) { dx--; }
 
-                if (dx != 0 || dy != 0)
-                {
-                    PKVector forceDir = new PKVector(dx, dy).Normalized();
-                    PKVector force = forceDir * forceSize;
-                    body.AddForce(force);
-                }
+                //if (!this.PKWorld.GetBody(0, out PKBody body))
+                //{
+                //    throw new Exception("无法找到body");
+                //}
 
-                if (keyboard.IsKeyDown(Keys.R))
-                {
-                    body.Rotate((float)Math.PI / 2f * (float)gameTime.ElapsedGameTime.TotalSeconds * forceSize);
-                }
+                //if (dx != 0 || dy != 0)
+                //{
+                //    PKVector forceDir = new PKVector(dx, dy).Normalized();
+                //    PKVector force = forceDir * forceSize;
+                //    body.AddForce(force);
+                //}
+
+                //if (keyboard.IsKeyDown(Keys.R))
+                //{
+                //    body.Rotate((float)Math.PI / 2f * (float)gameTime.ElapsedGameTime.TotalSeconds * forceSize);
+                //}
             }
 
             PKWorld.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
 
-            WrapScreen();
+            //WrapScreen();
+            CheckShouldRemove();
             base.Update(gameTime);
         }
 
@@ -166,15 +207,15 @@ namespace PKPhysicsTestProject
                 if (body.shape.ShapeType == ShapeType.Circle)
                 {
                     Vector2 pos = PKConverter.ToVector2(body.Position);
-                    shapes.DrawCircleFill(pos, (body.shape as Cricle).Radius, 360, this.cricleColors[i]);
-                    shapes.DrawCircle(pos, (body.shape as Cricle).Radius, 360, Color.White);
+                    shapes.DrawCircleFill(pos, (body.shape as Cricle).Radius, 360, this.Colors[i]);
+                    shapes.DrawCircle(pos, (body.shape as Cricle).Radius, 360, this.OutLineColors[i]);
 
                 }
-                else if (body.shape.ShapeType == ShapeType.Box)
+                else if (body.shape.ShapeType == ShapeType.Polygon)
                 {
                     PKConverter.ToVector2Array(body.GetTransformedVertics(), ref verticsBuffer);
-                    shapes.DrawPolygonFill(this.verticsBuffer, body.shape.Tiangles, this.boxColors[i]);
-                    shapes.DrawPolygon(this.verticsBuffer, boxColorsOutLine[i]);
+                    shapes.DrawPolygonFill(this.verticsBuffer, body.shape.Tiangles, this.Colors[i]);
+                    shapes.DrawPolygon(this.verticsBuffer, this.OutLineColors[i]);
                 }
             }
             this.shapes.End();
@@ -201,6 +242,27 @@ namespace PKPhysicsTestProject
                 if (body.Position.X > camMax.X) body.MoveTo(new PKVector(body.Position.X - viewW, body.Position.Y));
                 if (body.Position.Y < camMin.Y) body.MoveTo(new PKVector(body.Position.X, body.Position.Y + viewH));
                 if (body.Position.Y > camMax.Y) body.MoveTo(new PKVector(body.Position.X, body.Position.Y - viewH));
+            }
+        }
+
+        private void CheckShouldRemove()
+        {
+            this.camera.GetExtents(out _, out _, out float viewBottom, out _);
+            for (int i = 0; i < PKWorld.BodyCount(); ++i)
+            {
+                if (!PKWorld.GetBody(i, out var body))
+                {
+                    throw new ArgumentOutOfRangeException();
+                }
+
+                PKAABB aabb = body.GetAABB();
+
+                if (aabb.Max.Y < viewBottom)
+                {
+                    this.PKWorld.RemoveBody(body);
+                    this.Colors.RemoveAt(i);
+                    this.OutLineColors.RemoveAt(i);
+                }
             }
         }
     }
