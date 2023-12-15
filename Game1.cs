@@ -188,7 +188,7 @@ namespace PKPhysicsTestProject
                 //}
             }
 
-            PKWorld.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+            PKWorld.Step((float)gameTime.ElapsedGameTime.TotalSeconds, 32);
 
             //WrapScreen();
             CheckShouldRemove();
@@ -217,6 +217,11 @@ namespace PKPhysicsTestProject
                     shapes.DrawPolygonFill(this.verticsBuffer, body.shape.Tiangles, this.Colors[i]);
                     shapes.DrawPolygon(this.verticsBuffer, this.OutLineColors[i]);
                 }
+            }
+
+            foreach (var contactPoint in PKWorld?.ContactPointList)
+            {
+                shapes.DrawBox(PKConverter.ToVector2(contactPoint), .5f, .5f, Color.Orange);
             }
             this.shapes.End();
             this.screen.Unset();
